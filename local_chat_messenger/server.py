@@ -4,20 +4,22 @@ from faker import Faker
 
 def main():
     # ソケットインスタンス作成
-    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # サーバ起動
-    server_address = '/tmp/socket_file'
+    # server_address = '/tmp/socket_file' #UNIXドメインソケットの場合
+    server_address = 'localhost'
+    server_port = 50007
     
     # 既存のソケットがあれば落とす
-    try:
-        os.unlink(server_address) #ファイルを削除する関数
-    except FileNotFoundError:
-        pass
+    # try:
+    #     os.unlink(server_address) #ファイルを削除する関数
+    # except FileNotFoundError:
+    #     pass
     
     print('Starting up on {}'.format(server_address))
 
     # サーバアドレスにソケットをバインドする
-    sock.bind(server_address)
+    sock.bind((server_address, server_port))
     
     sock.listen(0)
     # ユーザーの入力待ち
