@@ -8,16 +8,14 @@ def main():
     # TCPでやりとりする
 
     # socketインスタンス生成（UNIXドメイン, TCP）
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 
     # アドレスファイルを指定（サーバ側の）
-    # server_address = '/tmp/socket_file'
-    server_address = 'localhost'
-    server_port = 50007
+    server_address = '/tmp/rpc_socket_file'
 
     # サーバーへの接続を確立
     try:
-        sock.connect((server_address, server_port))
+        sock.connect(server_address)
     except socket.error as err:
         print(err)
         sys.exit(1)
