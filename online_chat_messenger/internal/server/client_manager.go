@@ -26,6 +26,7 @@ func NewClientManager(timeout time.Duration) *ClientManager {
 
 func (cm *ClientManager) AddNewClient(addr *net.UDPAddr) {
 	addrStr := addr.String()
+	// 存在していなければ送信元を登録
 	if _, exists := (*cm).clients[addrStr]; !exists {
 		cm.clients[addrStr] = addr
 		cm.lastActive[addrStr] = time.Now()
@@ -39,6 +40,7 @@ func (cm *ClientManager) BroadCast(message string, senderAdder *net.UDPAddr, con
 		if addr.String() == senderAdderStr {
 			continue
 		}
-		go (*conn).WriteToUDP([]byte(message), addr)
+		// 送信処理もgoroutineにすることでループを効率的に回す
+		go (*conn).WriteToUDP([]byte(message), addr) // 意識づけのためにあえて(*conn)としている
 	}
 }

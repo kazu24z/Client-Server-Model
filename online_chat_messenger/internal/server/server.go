@@ -31,33 +31,38 @@ func handleConn(conn *net.UDPConn) {
 	clientManager := NewClientManager(300 * time.Second)
 
 	for {
-		// addrがあるのは、UDPは接続状態を持たないため。どこから来たかをここで保持しておく
-		n, addr, err := conn.ReadFromUDP(buf) // こいつ、ブロッキングしてるからbufにデータが入るまでここで待機する。だから呼び出したとき、処理が終わらない
+		// clientAddrがあるのは、UDPは接続状態を持たないため。どこから来たかをここで保持しておく
+		n, clientAddr, err := conn.ReadFromUDP(buf) // こいつ、ブロッキングしてるからbufにデータが入るまでここで待機する。だから呼び出したとき、処理が終わらない
 
 		if err != nil {
 			log.Println("読み取りエラー:", err)
 			continue // エラーがあったとしても、ループ自体は終わらせない = サーバは待機したまま
 		}
 
+		// 処理用にバッファをコピー
+		bufCopy := make([]byte, n)
+		copy(bufCopy, buf[:n])
+
 		// addrがあれば、サーバ側でクライアントを覚えておく
-		clientManager.AddNewClient(addr)
+		clientManager.AddNewClient(clientAddr)
 
-		// buf[:n] これで送信メッセージのbyte列が取得できる
-		// buf[0] これはユーザー名を表現するバイト数が入っている → intにする
-		// message = buf[:n] - buf[0] - buf[1:n+1]
-		userName, messageBody := parseMessage(buf, n)
+		// goroutine呼び出しでmainスレッドはメッセージ取得に専念できる
+		go func(data []byte, clientAddr *net.UDPAddr) {
+			// コピーしたバッファを使用
+			userName, messageBody := parseMessage(data, len(data))
 
-		// userName, messageBodyが空のとき、データを捨てる
-		if userName == "" || messageBody == "" {
-			continue
-		}
+			// userName, messageBodyが空のとき、データを捨てる
+			if userName == "" || messageBody == "" {
+				return
+			}
 
-		message := userName + ": " + messageBody
+			message := userName + ": " + messageBody
 
-		// メッセージ送信
-		clientManager.BroadCast(message, addr, conn)
+			// メッセージ送信
+			clientManager.BroadCast(message, clientAddr, conn)
 
-		fmt.Printf("[%s]: %s\n", addr, message)
+			fmt.Printf("[%s]: %s\n", clientAddr, message)
+		}(bufCopy, clientAddr)
 	}
 }
 
