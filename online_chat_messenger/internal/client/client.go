@@ -182,11 +182,17 @@ func (c *Client) renderScreen() {
 	fmt.Print("\r" + c.userName + "> " + c.inputLine)
 }
 
-func (c *Client) Close() {
+func (c *Client) Close() error {
+	var err error
 	if c.oldState != nil {
-		term.Restore(int(os.Stdin.Fd()), c.oldState)
+		err = term.Restore(int(os.Stdin.Fd()), c.oldState)
 	}
 	if c.conn != nil {
-		c.conn.Close()
+		err = c.conn.Close()
 	}
+
+	if err != nil {
+		return fmt.Errorf("クローズ処理に失敗しました: %w", err)
+	}
+	return nil
 }

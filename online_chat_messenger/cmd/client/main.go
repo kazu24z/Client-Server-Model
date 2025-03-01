@@ -7,6 +7,11 @@ import (
 
 func main() {
 	c := client.NewClient()
+	defer func() {
+		if err := c.Close(); err != nil {
+			log.Printf("%v", err)
+		}
+	}()
 	defer c.Close()
 
 	if err := c.SetupTerminal(); err != nil {
