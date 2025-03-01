@@ -4,8 +4,18 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"sync"
 	"time"
 )
+
+// バッファプールを定義（ポインタ版）
+var bufferPool = sync.Pool{
+	// Newフィールドは、プールが空のとき、Get()が呼ばれたときに紐づく関数を実行する
+	New: func() interface{} { // どんな型でもプールできるようにinterface{}を使用
+		buffer := make([]byte, 4096)
+		return &buffer // ポインタを返す
+	},
+}
 
 func Start() {
 	fmt.Println("server Start")
@@ -39,16 +49,20 @@ func handleConn(conn *net.UDPConn) {
 			continue // エラーがあったとしても、ループ自体は終わらせない = サーバは待機したまま
 		}
 
-		// 処理用にバッファをコピー
-		bufCopy := make([]byte, n)
-		copy(bufCopy, buf[:n])
+		// プールからバッファポインタを取得
+		bufPtr := bufferPool.Get().(*[]byte) // bufferPool.Get()はinterface{}型
+		// 必要なサイズに調整してコピー
+		bufCopy := (*bufPtr)[:n]
+		copy(bufCopy, buf[:n]) // プールさせた[]byteスライスの実態にUDPで読み取ったデータをコピー
 
 		// addrがあれば、サーバ側でクライアントを覚えておく
 		clientManager.AddNewClient(clientAddr)
 
 		// goroutine呼び出しでmainスレッドはメッセージ取得に専念できる
-		go func(data []byte, clientAddr *net.UDPAddr) {
-			// コピーしたバッファを使用
+		go func(data []byte, bufPtr *[]byte, clientAddr *net.UDPAddr) {
+			// 処理が終わったらポインタを返却
+			defer bufferPool.Put(bufPtr)
+
 			userName, messageBody := parseMessage(data, len(data))
 
 			// userName, messageBodyが空のとき、データを捨てる
@@ -62,7 +76,7 @@ func handleConn(conn *net.UDPConn) {
 			clientManager.BroadCast(message, clientAddr, conn)
 
 			fmt.Printf("[%s]: %s\n", clientAddr, message)
-		}(bufCopy, clientAddr)
+		}(bufCopy, bufPtr, clientAddr)
 	}
 }
 
