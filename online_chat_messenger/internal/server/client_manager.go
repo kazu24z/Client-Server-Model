@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net"
 	"time"
 )
@@ -40,7 +41,23 @@ func (cm *ClientManager) BroadCast(message string, senderAdder *net.UDPAddr, con
 		if addr.String() == senderAdderStr {
 			continue
 		}
-		// 送信処理もgoroutineにすることでループを効率的に回す
-		go (*conn).WriteToUDP([]byte(message), addr) // 意識づけのためにあえて(*conn)としている
+		go func(addr *net.UDPAddr) {
+			cm.lastActive[senderAdderStr] = time.Now()
+			// 送信処理もgoroutineにすることでループを効率的に回す
+			(*conn).WriteToUDP([]byte(message), addr) // 意識づけのためにあえて(*conn)としている
+		}(addr)
+	}
+}
+
+func (cm *ClientManager) RemoveInactiveClients() {
+	timeout := cm.timeout
+
+	for key := range cm.lastActive {
+		expiredTime := cm.lastActive[key].Add(timeout) // 最終受信時刻 + タイムアウト時刻 = 期限
+		if time.Now().After(expiredTime) {
+			delete(cm.clients, key)
+			delete(cm.lastActive, key)
+			fmt.Printf("クライアント{%s}のセッションを削除しました。\n", key)
+		}
 	}
 }

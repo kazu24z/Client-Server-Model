@@ -31,14 +31,25 @@ func Start() {
 	}
 	defer conn.Close()
 
-	handleConn(conn)
-}
-
-func handleConn(conn *net.UDPConn) {
-	buf := make([]byte, 4096)
-
 	// クライアントを管理するインスタンス
 	clientManager := NewClientManager(300 * time.Second)
+
+	// 期限切れの接続をマネージャから削除する処理を実行する
+	go func() {
+		ticker := time.NewTicker(60 * time.Second) // Ticker構造体生成時に、チャネルにデータを入れる
+		defer ticker.Stop()
+
+		for range ticker.C {
+			// タイムアウト接続を除去する処理
+			clientManager.RemoveInactiveClients()
+		}
+	}()
+
+	handleConn(conn, clientManager)
+}
+
+func handleConn(conn *net.UDPConn, clientManager *ClientManager) {
+	buf := make([]byte, 4096)
 
 	for {
 		// clientAddrがあるのは、UDPは接続状態を持たないため。どこから来たかをここで保持しておく
