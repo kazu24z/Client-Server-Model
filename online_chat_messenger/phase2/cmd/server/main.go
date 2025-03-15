@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"online_chat_messenger/internal/auth"
+	"online_chat_messenger/internal/chat"
 	"online_chat_messenger/internal/network"
 )
 
@@ -14,7 +16,10 @@ func main() {
 	}
 	port := os.Args[1]
 
-	server, err := network.NewTCPServer(port)
+	roomManager := chat.NewSimpleRoomManager()
+	userManager := auth.NewSimpleUserManager()
+
+	server, err := network.NewTCPServer(port, roomManager, userManager)
 	if err != nil {
 		fmt.Printf("サーバーの起動に失敗しました: %v\n", err)
 		os.Exit(1)
