@@ -11,7 +11,7 @@ import (
 
 func main() {
 	if len(os.Args) != 3 {
-		fmt.Println("使用法: server <ポート番号>")
+		fmt.Println("使用法: server <TCPポート番号> <UDPポート番号>")
 		os.Exit(1)
 	}
 	tcpPort := os.Args[1]
@@ -19,6 +19,10 @@ func main() {
 
 	roomManager := chat.NewSimpleRoomManager()
 	userManager := auth.NewSimpleUserManager()
+	simpleUserManager := userManager // 型アサーションが不要になる
+
+	// ルームマネージャーをユーザーマネージャーに設定
+	simpleUserManager.SetRoomManager(roomManager)
 
 	// TCPサーバーの初期化
 	tcpServer, err := network.NewTCPServer(tcpPort, roomManager, userManager)

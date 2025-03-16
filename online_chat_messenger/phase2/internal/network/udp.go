@@ -91,6 +91,11 @@ func (s *UDPServer) handleConnection(conn *net.UDPConn) {
 
 		fmt.Printf("ルーム名: %s, トークン: %s, メッセージ: %s\n", roomName, token, message)
 
+		// ユーザーのアクティビティを更新
+		if userManager, ok := s.userManager.(*auth.SimpleUserManager); ok {
+			userManager.UpdateActivity(token)
+		}
+
 		// トークンの検証処理
 		user, err := s.validateToken(token, roomName)
 		if err != nil {

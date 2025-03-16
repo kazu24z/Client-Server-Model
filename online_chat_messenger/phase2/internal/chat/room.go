@@ -10,6 +10,7 @@ type RoomManager interface {
 	CreateRoom(name, password string) (Room, error)
 	FindRoom(name string) (Room, error)
 	DeleteRoom(name string) error
+	GetAllRooms() []Room
 }
 
 // Room はチャットルームのインターフェースです。
@@ -67,6 +68,15 @@ func (m *SimpleRoomManager) DeleteRoom(name string) error {
 	}
 	delete(m.rooms, name)
 	return nil
+}
+
+// GetAllRooms はすべてのルームを返します。
+func (m *SimpleRoomManager) GetAllRooms() []Room {
+	rooms := make([]Room, 0, len(m.rooms))
+	for _, room := range m.rooms {
+		rooms = append(rooms, room)
+	}
+	return rooms
 }
 
 // SimpleRoom はRoomのシンプルな実装です。
