@@ -145,7 +145,7 @@ func (s *TCPServer) handleCreateRoomRequest(conn net.Conn, request ClientRequest
 	s.userManager.RegisterUser(token, user)
 
 	// トークンを含むJSONペイロードを生成
-	tokenPayload, err := json.Marshal(map[string]string{"token": token})
+	payload, err := json.Marshal(map[string]string{"token": token, "roomName": room.GetName()})
 	if err != nil {
 		fmt.Printf("JSONのエンコードに失敗しました: %v\n", err)
 		return
@@ -157,7 +157,7 @@ func (s *TCPServer) handleCreateRoomRequest(conn net.Conn, request ClientRequest
 			Operation: 1,
 			State:     2,
 		},
-		Body: tokenPayload,
+		Body: payload,
 	}
 	encodedCompleteMessage, err := protocol.EncodeTCRPMessage(completeTCRPMessage)
 	if err != nil {

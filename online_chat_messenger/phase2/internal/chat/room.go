@@ -1,6 +1,9 @@
 package chat
 
-import "errors"
+import (
+	"errors"
+	"net"
+)
 
 // RoomManager はチャットルーム管理のインターフェースです。
 type RoomManager interface {
@@ -24,6 +27,8 @@ type User interface {
 	GetToken() string
 	GetAddress() string
 	IsHost() bool
+	GetUDPAddr() *net.UDPAddr
+	SetUDPAddr(addr *net.UDPAddr)
 }
 
 // SimpleRoomManager はRoomManagerのシンプルな実装です。
@@ -96,6 +101,7 @@ func (r *SimpleRoom) RemoveUser(user User) error {
 // Broadcast はチャットルーム内の全ユーザーにメッセージを送信します。
 func (r *SimpleRoom) Broadcast(message string, sender User) error {
 	// ここでメッセージのブロードキャスト処理を実装します。
+
 	return nil
 }
 
@@ -114,6 +120,7 @@ type SimpleUser struct {
 	token   string
 	address string
 	isHost  bool
+	udpAddr *net.UDPAddr
 }
 
 // NewUser は新しいSimpleUserを生成します。
@@ -139,4 +146,14 @@ func (u *SimpleUser) GetAddress() string {
 // IsHost はユーザーがホストかどうかを返します。
 func (u *SimpleUser) IsHost() bool {
 	return u.isHost
+}
+
+// GetUDPAddr はユーザーのUDPアドレスを返します。
+func (u *SimpleUser) GetUDPAddr() *net.UDPAddr {
+	return u.udpAddr
+}
+
+// SetUDPAddr はユーザーのUDPアドレスを設定します。
+func (u *SimpleUser) SetUDPAddr(addr *net.UDPAddr) {
+	u.udpAddr = addr
 }
